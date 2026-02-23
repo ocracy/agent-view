@@ -659,9 +659,7 @@ export function attachSessionSync(sessionName: string): void {
     env: process.env
   })
 
-  // Clear screen, scrollback, and re-enter alternate buffer for TUI
-  // iTerm2 proprietary escape to clear scrollback buffer
-  process.stdout.write("\x1b]1337;ClearScrollback\x07")
+  // Clear screen and re-enter alternate buffer for TUI
   process.stdout.write("\x1b[2J\x1b[H")
   process.stdout.write("\x1b[?1049h")
 
