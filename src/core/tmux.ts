@@ -180,6 +180,35 @@ export function isSessionActive(name: string, thresholdSeconds = 2): boolean {
   return now - activity < thresholdSeconds
 }
 
+/**
+ * Wait for the shell in a tmux session to be ready (prompt visible).
+ * Polls capture-pane until a shell prompt character is detected.
+ */
+async function waitForShellReady(sessionName: string, timeoutMs = 10000): Promise<void> {
+  const startTime = Date.now()
+  while (Date.now() - startTime < timeoutMs) {
+    try {
+      const { stdout } = await execAsync(
+        tmuxCmd(`capture-pane -t "${sessionName}" -p`),
+        { timeout: 2000 }
+      )
+      const cleaned = stripAnsi(stdout)
+      const lines = cleaned.split("\n").filter(l => l.trim() !== "")
+      if (lines.length > 0) {
+        const lastLine = lines[lines.length - 1].trim()
+        // Common shell prompt endings: $ % ❯ > #
+        if (/[$%❯>#]\s*$/.test(lastLine)) {
+          return
+        }
+      }
+    } catch {
+      // Session might not be ready yet
+    }
+    await new Promise(r => setTimeout(r, 200))
+  }
+  // Timeout - proceed anyway
+}
+
 export async function createSession(options: {
   name: string
   command?: string
@@ -205,6 +234,11 @@ export async function createSession(options: {
   }
 
   if (options.command) {
+    // Wait for shell to be ready before sending command.
+    // Shell initialization (zshrc, conda, etc.) can take several seconds.
+    // Sending commands before the shell is ready causes them to be lost or mishandled.
+    await waitForShellReady(options.name)
+
     let cmdToSend = options.command
 
     // IMPORTANT: Commands containing bash-specific syntax (like `session_id=$(...)`)

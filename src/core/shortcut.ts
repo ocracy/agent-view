@@ -61,7 +61,8 @@ export async function executeShortcut(options: ExecuteShortcutOptions): Promise<
     projectPath: shortcut.projectPath,
     groupPath,
     tool: shortcut.tool,
-    command: shortcut.command
+    command: shortcut.command,
+    initialPrompt: shortcut.initialPrompt
   }
 
   const session = await manager.create(createOptions)

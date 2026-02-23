@@ -87,6 +87,7 @@ export interface SessionCreateOptions {
   worktreeRepo?: string
   worktreeBranch?: string
   claudeOptions?: ClaudeOptions
+  initialPrompt?: string
 }
 
 export interface SessionForkOptions {
@@ -112,6 +113,7 @@ export interface Shortcut {
   description?: string            // Optional help text
   command?: string                // Custom command (when tool === "custom")
   keybind?: string                // e.g., "1", "2", "<leader>w", "ctrl+shift+1"
+  initialPrompt?: string           // Initial prompt to send when session starts
 }
 
 export interface Config {

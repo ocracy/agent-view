@@ -107,6 +107,32 @@ export class SessionManager {
     storage.touch()
   }
 
+  /**
+   * Wait for a tool's TUI to appear, then send the initial prompt.
+   * Detects when the tool has rendered its interface (max 10 seconds).
+   */
+  private async waitAndSendPrompt(sessionName: string, prompt: string): Promise<void> {
+    for (let i = 0; i < 10; i++) {
+      await new Promise(r => setTimeout(r, 1000))
+      try {
+        const output = await tmux.capturePane(sessionName)
+        const cleaned = tmux.stripAnsi(output)
+
+        // Claude shows "Claude Code" in its welcome banner when ready
+        if (cleaned.includes("Claude Code")) {
+          log("Tool TUI detected at poll", i, "- sending initial prompt")
+          await new Promise(r => setTimeout(r, 500))
+          await tmux.sendKeys(sessionName, prompt)
+          log("Initial prompt sent")
+          return
+        }
+      } catch (err) {
+        log(`waitAndSendPrompt poll ${i}: error:`, err)
+      }
+    }
+    log("waitAndSendPrompt: timed out")
+  }
+
   async create(options: SessionCreateOptions): Promise<Session> {
     log("create() called with options:", options)
     const storage = getStorage()
@@ -164,6 +190,13 @@ export class SessionManager {
     } catch (err) {
       log("tmux.createSession error:", err)
       throw err
+    }
+
+    // Send initial prompt after tool starts (via tmux send-keys)
+    // This must be awaited (not fire-and-forget) because attaching to the
+    // session blocks the event loop, preventing background polling.
+    if (options.initialPrompt) {
+      await this.waitAndSendPrompt(tmuxName, options.initialPrompt)
     }
 
     const toolData: Record<string, unknown> = {}

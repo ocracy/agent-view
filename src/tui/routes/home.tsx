@@ -297,6 +297,12 @@ export function Home() {
     }
   }
 
+  function selectSessionById(sessionId: string) {
+    const items = groupedItems()
+    const idx = items.findIndex(item => item.type === "session" && item.session?.id === sessionId)
+    if (idx >= 0) setSelectedIndex(idx)
+  }
+
   async function handleShortcut(shortcut: ReturnType<typeof getShortcuts>[0]) {
     try {
       const session = await executeShortcut({ shortcut })
@@ -308,6 +314,7 @@ export function Home() {
       })
 
       sync.refresh()
+      selectSessionById(session.id)
     } catch (err) {
       toast.error(err as Error)
     }
@@ -480,7 +487,7 @@ export function Home() {
 
     // s to open shortcuts dialog
     if (evt.name === "s" && !evt.shift && !evt.ctrl) {
-      dialog.push(() => <DialogShortcuts />)
+      dialog.push(() => <DialogShortcuts onSessionCreated={selectSessionById} />)
       return
     }
 
@@ -583,7 +590,9 @@ export function Home() {
       }
     })
 
-    const maxTitleLen = useDualColumn() ? 15 : 20
+    // Reserve space for: indent(2) + status icon(1) + space(1) + spacer + time(~5) + padding(2)
+    const overhead = (props.indented ? 2 : 0) + 1 + 1 + 5 + 2
+    const maxTitleLen = Math.max(10, leftWidth() - overhead)
     const title = props.session.title.length > maxTitleLen
       ? props.session.title.slice(0, maxTitleLen - 2) + ".."
       : props.session.title

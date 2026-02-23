@@ -26,7 +26,11 @@ const TOOL_ICONS: Record<string, string> = {
   shell: "\u276F"      // terminal
 }
 
-export function DialogShortcuts() {
+interface DialogShortcutsProps {
+  onSessionCreated?: (sessionId: string) => void
+}
+
+export function DialogShortcuts(props: DialogShortcutsProps) {
   const dialog = useDialog()
   const sync = useSync()
   const toast = useToast()
@@ -81,6 +85,7 @@ export function DialogShortcuts() {
 
       dialog.clear()
       sync.refresh()
+      props.onSessionCreated?.(session.id)
     } catch (err) {
       toast.error(err as Error)
     } finally {
