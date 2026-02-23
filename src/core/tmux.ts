@@ -650,9 +650,7 @@ export function attachSessionSync(sessionName: string): void {
 
   // Exit alternate screen buffer (TUI uses this)
   process.stdout.write("\x1b[?1049l")
-  // Clear screen, cursor home, and clear terminal scrollback buffer
-  // \x1b[3J clears the scrollback so old sessions don't appear when scrolling up
-  process.stdout.write("\x1b[2J\x1b[3J\x1b[H")
+  process.stdout.write("\x1b[2J\x1b[H")
   process.stdout.write("\x1b[?25h")
 
   // Attach to tmux - this blocks until user detaches (Ctrl+Q or Ctrl+B d)
@@ -662,7 +660,9 @@ export function attachSessionSync(sessionName: string): void {
   })
 
   // Clear screen, scrollback, and re-enter alternate buffer for TUI
-  process.stdout.write("\x1b[2J\x1b[3J\x1b[H")
+  // iTerm2 proprietary escape to clear scrollback buffer
+  process.stdout.write("\x1b]1337;ClearScrollback\x07")
+  process.stdout.write("\x1b[2J\x1b[H")
   process.stdout.write("\x1b[?1049h")
 
   // Restore terminal title to "Agent View"
